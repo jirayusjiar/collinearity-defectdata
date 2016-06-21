@@ -9,6 +9,7 @@ setwd(script.dir)
 #library(devtools)
 #install_github("klainfo/DefectData")
 library(DefectData)
+library(Hmisc)
 
 ## Define functions
 writeLine <- function(arg1,arg2){
@@ -46,6 +47,8 @@ getVIF <- function(dataset,refOrder,depVar,dataHeader){
 dir.create(file.path(paste0(getwd(), '/output/')), showWarnings = FALSE)
 dir.create(file.path(paste0(getwd(), '/output/varclus/')), showWarnings = FALSE)
 
+failVarclus <- c()
+failVIF <- c()
 
 for(targetProjectId in 1:nrow(listData)) {
 
@@ -65,7 +68,26 @@ for(targetProjectId in 1:nrow(listData)) {
     lapply(dataset[dep], function(x)
       factor(ifelse(x, "true", "false")))
   
-  corrGraph(dataset,indep,targetData)
+  tryCatch(
+    {
+      corrGraph(dataset,indep,targetData)
+    },  
+    error = function(e){
+      print(paste0("Fail to export correlation graph(varclus) on ",targetData))
+      failVarclus <<- c(failVarclus,targetProjectId)
+      })
   
-  getVIF(dataset,indep,dep,targetData)
+  tryCatch(
+    {
+      getVIF(dataset,indep,dep,targetData)
+    },
+    error = function(e){
+      print(paste0("Fail to export VIF on ",targetData))
+      failVIF <<- c(failVIF,targetProjectId)
+    })
 }
+
+print("Fail to varclus projectID")
+print(failVarclus)
+print("Fail to VIF projectID")
+print(failVIF)
