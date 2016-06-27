@@ -120,7 +120,7 @@ dir.create(file.path(paste0(getwd(), '/output/')), showWarnings = FALSE)
 dir.create(file.path(paste0(getwd(), '/output/varclus/')), showWarnings = FALSE)
 dir.create(file.path(paste0(getwd(), '/output/datasetDist/')), showWarnings = FALSE)
 writeLine("./defectData_summarize.csv",paste0(c("DataId","Name","Varclus-0.7","VIF(rms)-5","VIF(rms)-10"),collapse=","))
-
+failDD <- c()
 for(targetProjectId in 1:nrow(listData)) {
 
   print(paste('ProjectID:', targetProjectId,"START"))
@@ -138,31 +138,35 @@ for(targetProjectId in 1:nrow(listData)) {
   indep <- Data$indep
   
   # Export dataDist of dataset
-  exportDataDist(dataset[indep],targetData)
+  tryCatch({
+    exportDataDist(dataset[indep],targetData)
+  },error = function(e){
+    failDD <<- c(failDD,targetProjectId)
+  })
   
-  # convert fron logical -> factor variable type
-  dataset <- dataset[c(indep, dep)]
-  dataset[dep] <-
-    lapply(dataset[dep], function(x)
-      factor(ifelse(x, "true", "false")))
-  
-  print("Plot and export varclus")
-  tryCatch(
-    {
-      corrGraph(dataset,indep,targetData)
-    },  
-    error = function(e){
-      print(paste0("Fail to export correlation graph(varclus) on ",targetData))
-      failVarclus <<- c(failVarclus,targetProjectId)
-      datasetInfo <<- c(datasetInfo,"FAIL")
-      })
-  
-  print("Build model and compute VIF")
-  getVIF(dataset,indep,dep,targetData,targetProjectId)
-    
-  writeLine("./defectData_summarize.csv",datasetInfo)
-  
-  print(paste('ProjectID:', targetProjectId,"DONE"))
+#   # convert fron logical -> factor variable type
+#   dataset <- dataset[c(indep, dep)]
+#   dataset[dep] <-
+#     lapply(dataset[dep], function(x)
+#       factor(ifelse(x, "true", "false")))
+#   
+#   print("Plot and export varclus")
+#   tryCatch(
+#     {
+#       corrGraph(dataset,indep,targetData)
+#     },  
+#     error = function(e){
+#       print(paste0("Fail to export correlation graph(varclus) on ",targetData))
+#       failVarclus <<- c(failVarclus,targetProjectId)
+#       datasetInfo <<- c(datasetInfo,"FAIL")
+#       })
+#   
+#   print("Build model and compute VIF")
+#   getVIF(dataset,indep,dep,targetData,targetProjectId)
+#     
+#   writeLine("./defectData_summarize.csv",datasetInfo)
+#   
+#   print(paste('ProjectID:', targetProjectId,"DONE"))
 }
 
 print(paste0("Fail to varclus(",length(failVarclus),") projectID"))
@@ -171,5 +175,8 @@ print(paste0("Fail to car::VIF(",length(failCarVIF),") projectID"))
 print(failCarVIF)
 print(paste0("Fail to rms::VIF(",length(failRMSVIF),") projectID"))
 print(failRMSVIF)
+print(paste0("Fail to DD",length(failDD),") projectID"))
+print(failDD)
+
 
 

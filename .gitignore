@@ -1,4 +1,5 @@
 .Rhistory
+*.xls
 *.png
 *.csv
 /output
