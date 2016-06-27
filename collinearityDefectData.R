@@ -144,29 +144,29 @@ for(targetProjectId in 1:nrow(listData)) {
     failDD <<- c(failDD,targetProjectId)
   })
   
-#   # convert fron logical -> factor variable type
-#   dataset <- dataset[c(indep, dep)]
-#   dataset[dep] <-
-#     lapply(dataset[dep], function(x)
-#       factor(ifelse(x, "true", "false")))
-#   
-#   print("Plot and export varclus")
-#   tryCatch(
-#     {
-#       corrGraph(dataset,indep,targetData)
-#     },  
-#     error = function(e){
-#       print(paste0("Fail to export correlation graph(varclus) on ",targetData))
-#       failVarclus <<- c(failVarclus,targetProjectId)
-#       datasetInfo <<- c(datasetInfo,"FAIL")
-#       })
-#   
-#   print("Build model and compute VIF")
-#   getVIF(dataset,indep,dep,targetData,targetProjectId)
-#     
-#   writeLine("./defectData_summarize.csv",datasetInfo)
-#   
-#   print(paste('ProjectID:', targetProjectId,"DONE"))
+  # convert fron logical -> factor variable type
+  dataset <- dataset[c(indep, dep)]
+  dataset[dep] <-
+    lapply(dataset[dep], function(x)
+      factor(ifelse(x, "true", "false")))
+  
+  print("Plot and export varclus")
+  tryCatch(
+    {
+      corrGraph(dataset,indep,targetData)
+    },  
+    error = function(e){
+      print(paste0("Fail to export correlation graph(varclus) on ",targetData))
+      failVarclus <<- c(failVarclus,targetProjectId)
+      datasetInfo <<- c(datasetInfo,"FAIL")
+      })
+  
+  print("Build model and compute VIF")
+  getVIF(dataset,indep,dep,targetData,targetProjectId)
+    
+  writeLine("./defectData_summarize.csv",datasetInfo)
+  
+  print(paste('ProjectID:', targetProjectId,"DONE"))
 }
 
 print(paste0("Fail to varclus(",length(failVarclus),") projectID"))
