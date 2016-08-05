@@ -55,7 +55,7 @@ exportDataDist <- cmpfun(.exportDataDist)
 corrGraph <- cmpfun(.corrGraph)
 
 .getVIF <- function(dataset,refOrder,depVar,dataHeader,dataID){
-  
+  browser()
   model <- glm(as.formula(paste(
     depVar, "~", paste(refOrder, collapse = '+')
   )),
@@ -63,22 +63,23 @@ corrGraph <- cmpfun(.corrGraph)
   family = binomial())
   
   # Header, Package, n(HighCol),Indep
-  writeLine("./output/VIF.csv",paste0(c(dataHeader,"Package","n(HighCol)",refOrder),collapse=","))
+  #writeLine("./output/VIF.csv",paste0(c(dataHeader,"Package","n(HighCol)",refOrder),collapse=","))
   
   # Header, car,car::n(HighlyCorrelatedVar),car::VIF
-  tryCatch({
-    model.vif <- car::vif(model)[refOrder]
-    writeLine("./output/VIF.csv",paste0(c(dataHeader,"car",length(model.vif[model.vif>5]),model.vif),collapse=","))
-  },
-  error = function(e){
-    print(paste0("Fail to export car::VIF on ",dataHeader))
-    failCarVIF <<- c(failCarVIF,dataID)
-  })
+#   tryCatch({
+#     model.vif <- car::vif(model)[refOrder]
+#     writeLine("./output/VIF.csv",paste0(c(dataHeader,"car",length(model.vif[model.vif>5]),model.vif),collapse=","))
+#   },
+#   error = function(e){
+#     print(paste0("Fail to export car::VIF on ",dataHeader))
+#     failCarVIF <<- c(failCarVIF,dataID)
+#   })
   
   # Header, rms,rms::n(HighlyCorrelatedVar),rms::VIF
   tryCatch({
     model.vif <- rms::vif(model)[refOrder]
-    writeLine("./output/VIF.csv",paste0(c(dataHeader,"rms",length(model.vif[model.vif>5]),model.vif),collapse=","))
+    rms::vif(model)[refOrder]
+    #writeLine("./output/VIF.csv",paste0(c(dataHeader,"rms",length(model.vif[model.vif>5]),model.vif),collapse=","))
     
     # Check if there are any variables that have vif value more than 5 and 10 (Collinearity)
     datasetInfo <<- c(datasetInfo,Reduce("|",model.vif>=5))
@@ -121,7 +122,7 @@ dir.create(file.path(paste0(getwd(), '/output/varclus/')), showWarnings = FALSE)
 dir.create(file.path(paste0(getwd(), '/output/datasetDist/')), showWarnings = FALSE)
 writeLine("./defectData_summarize.csv",paste0(c("DataId","Name","Varclus-0.7","VIF(rms)-5","VIF(rms)-10"),collapse=","))
 failDD <- c()
-for(targetProjectId in 1:nrow(listData)) {
+for(targetProjectId in 12:15) {
 
   print(paste('ProjectID:', targetProjectId,"START"))
   datasetInfo <<- c(targetProjectId)  
@@ -138,11 +139,11 @@ for(targetProjectId in 1:nrow(listData)) {
   indep <- Data$indep
   
   # Export dataDist of dataset
-  tryCatch({
-    exportDataDist(dataset[indep],targetData)
-  },error = function(e){
-    failDD <<- c(failDD,targetProjectId)
-  })
+#   tryCatch({
+#     exportDataDist(dataset[indep],targetData)
+#   },error = function(e){
+#     failDD <<- c(failDD,targetProjectId)
+#   })
   
   # convert fron logical -> factor variable type
   dataset <- dataset[c(indep, dep)]
@@ -151,15 +152,15 @@ for(targetProjectId in 1:nrow(listData)) {
       factor(ifelse(x, "true", "false")))
   
   print("Plot and export varclus")
-  tryCatch(
-    {
-      corrGraph(dataset,indep,targetData)
-    },  
-    error = function(e){
-      print(paste0("Fail to export correlation graph(varclus) on ",targetData))
-      failVarclus <<- c(failVarclus,targetProjectId)
-      datasetInfo <<- c(datasetInfo,"FAIL")
-      })
+#   tryCatch(
+#     {
+#       corrGraph(dataset,indep,targetData)
+#     },  
+#     error = function(e){
+#       print(paste0("Fail to export correlation graph(varclus) on ",targetData))
+#       failVarclus <<- c(failVarclus,targetProjectId)
+#       datasetInfo <<- c(datasetInfo,"FAIL")
+#       })
   
   print("Build model and compute VIF")
   getVIF(dataset,indep,dep,targetData,targetProjectId)
