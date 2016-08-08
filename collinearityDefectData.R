@@ -55,7 +55,7 @@ exportDataDist <- cmpfun(.exportDataDist)
 corrGraph <- cmpfun(.corrGraph)
 
 .getVIF <- function(dataset,refOrder,depVar,dataHeader,dataID){
-  browser()
+  #browser()
   model <- glm(as.formula(paste(
     depVar, "~", paste(refOrder, collapse = '+')
   )),
@@ -113,6 +113,25 @@ getVIF <- cmpfun(.getVIF)
 }
 panel.cor <- cmpfun(.panel.cor)
 
+.redunAnalysis <- function(dataset,refOrder,dataHeader,dataOrder){
+  
+  rd <- redun(
+    as.formula(
+      paste(
+        "~", 
+        paste(refOrder, collapse = '+')
+      )
+    ), 
+    data = dataset,
+    r2 = 0.9,
+    type = 'adjusted',
+    nk = 0,
+    pr = TRUE
+  )
+  writeLine("./output/redun.csv",paste0(c(dataOrder,dataHeader,length(rd$Out),length(rd$In),collapse=",")))
+}
+redunAnalysis <- cmpfun(.redunAnalysis)
+
 
 ## Main
 
@@ -121,8 +140,10 @@ dir.create(file.path(paste0(getwd(), '/output/')), showWarnings = FALSE)
 dir.create(file.path(paste0(getwd(), '/output/varclus/')), showWarnings = FALSE)
 dir.create(file.path(paste0(getwd(), '/output/datasetDist/')), showWarnings = FALSE)
 writeLine("./defectData_summarize.csv",paste0(c("DataId","Name","Varclus-0.7","VIF(rms)-5","VIF(rms)-10"),collapse=","))
+writeLine("./output/redun.csv",paste0(c(c("Order","Header","nRemoved","nLeftover"),collapse=",")))
 failDD <- c()
-for(targetProjectId in 12:15) {
+t = c(31)
+for(targetProjectId in 1:nrow(listData)) {
 
   print(paste('ProjectID:', targetProjectId,"START"))
   datasetInfo <<- c(targetProjectId)  
@@ -163,8 +184,14 @@ for(targetProjectId in 12:15) {
 #       })
   
   print("Build model and compute VIF")
-  getVIF(dataset,indep,dep,targetData,targetProjectId)
-    
+  tryCatch({
+        redunAnalysis(dataset,indep,targetData,targetProjectId)
+      },
+      error = function(e){
+        print(paste0("Fail to perform redun ",targetProjectId))
+        
+      })
+  
   writeLine("./defectData_summarize.csv",datasetInfo)
   
   print(paste('ProjectID:', targetProjectId,"DONE"))
@@ -180,4 +207,21 @@ print(paste0("Fail to DD",length(failDD),") projectID"))
 print(failDD)
 
 
-
+.redunAnalysis <- function(dataset,refOrder,dataHeader,dataOrder){
+  
+  rd <- redun(
+    as.formula(
+      paste(
+        "~", 
+        paste(refOrder, collapse = '+')
+      )
+    ), 
+    data = dataset,
+    r2 = 0.9,
+    type = 'adjusted',
+    nk = 0,
+    pr = TRUE
+  )
+  writeLine("./output/redun.csv",paste0(c(dataOrder,dataHeader,length(rd$Out),length(rd$In),collapse=",")))
+}
+redunAnalysis <- cmpfun(.redunAnalysis)
